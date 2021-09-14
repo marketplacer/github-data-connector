@@ -5,7 +5,7 @@ var express = require('express'),
   http = require('http'),
   app = express(),
   env = require('node-env-file'),
-  request = require('request-promise');
+  axios = require("axios");
 
 // Environment variables.
 env(__dirname + '/.env');
@@ -53,18 +53,20 @@ app.get('/github/login/oauth/redirect', function(req, res) {
       json: true
     };
 
-  request(config).then(function(response) {
-    var accessToken = response.body.access_token;
+  axios(config)
+    .then(function (response) {
+      var accessToken = response.body.access_token;
 
-    // Set the token in cookies so the client can access it
-    res.cookie('accessToken', accessToken, { });
+      // Set the token in cookies so the client can access it
+      res.cookie("accessToken", accessToken, {});
 
-    // Redirect back to the WDC.
-    res.redirect('/github/index.html');
-  }).catch(function (err) {
-    console.log(err);
-    res.redirect('/github/index.html');
-  });
+      // Redirect back to the WDC.
+      res.redirect("/github/index.html");
+    })
+    .catch(function (err) {
+      console.log(err);
+      res.redirect("/github/index.html");
+    });
 });
 
 // Start the server

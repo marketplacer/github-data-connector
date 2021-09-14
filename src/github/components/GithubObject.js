@@ -1,7 +1,7 @@
 import {Base64} from 'js-base64';
 import PromisePool from 'es6-promise-pool';
 import $ from 'jquery';
-import req from 'request-promise';
+import axios from 'axios';
 import debug from 'debug';
 
 const log = debug('github');
@@ -205,42 +205,41 @@ class GithubObject {
       json: true,
     };
 
-    return req(config).then((response) => {
-      if (response.body instanceof Array) {
-        // Default GET Github API requests.
-        results.push(...response.body);
-      }
-      else if (response.body instanceof Object) {
-        // Default single GET Github API requests.
-        results.push(response.body);
-      }
-      else if (response.body.items instanceof Array) {
-        // Support SEARCH Github API requests.
-        // @link https://developer.github.com/v3/search/
-        results.push(...response.body.items);
-      }
-      else {
-        log('reject');
-      }
-
-      // Support Github pagination.
-      if (response.headers.link) {
-        const nextPage = getNextPage(response.headers.link);
-        if (nextPage) {
-          return this._request(nextPage, options, results);
+    return axios(config)
+      .then((response) => {
+        if (response.body instanceof Array) {
+          // Default GET Github API requests.
+          results.push(...response.body);
+        } else if (response.body instanceof Object) {
+          // Default single GET Github API requests.
+          results.push(response.body);
+        } else if (response.body.items instanceof Array) {
+          // Support SEARCH Github API requests.
+          // @link https://developer.github.com/v3/search/
+          results.push(...response.body.items);
+        } else {
+          log("reject");
         }
-      }
 
-      // Include request url to all result objects.
-      results.forEach((element) => {
-        element._request_url = url;
+        // Support Github pagination.
+        if (response.headers.link) {
+          const nextPage = getNextPage(response.headers.link);
+          if (nextPage) {
+            return this._request(nextPage, options, results);
+          }
+        }
+
+        // Include request url to all result objects.
+        results.forEach((element) => {
+          element._request_url = url;
+        });
+
+        return results;
+      })
+      .catch(function (err) {
+        log(err);
+        throw err;
       });
-
-      return results;
-    }).catch(function (err) {
-      log(err);
-      throw err;
-    });
   }
 
   /**
